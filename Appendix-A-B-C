@@ -1,0 +1,148 @@
+# Appendix A of the Article
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from urllib.parse import urlencode
+import csv
+
+# Define a list of URL's that will be scraped.
+list_of_urls =[]
+# Retrieve each of the url's HTML data and convert the data into a beautiful soup object.  
+# Find, extract and store reviewer names and review text into a list.
+
+names = []
+reviews = []
+data_string = ""
+
+for url in list_of_urls: 
+    params = {'api_key': "f00ffd18cb3cb9e64c315b9aa54e29f3", 'url': url}
+    response = requests.get('http://api.scraperapi.com/',   params=urlencode(params))
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    for item in soup.find_all("span", class_="a-profile-name"):
+      data_string = data_string + item.get_text()
+      names.append(data_string)
+      data_string = ""  
+    
+    for item in soup.find_all("span", {"data-hook": "review-body"}):
+      data_string = data_string + item.get_text()
+      reviews.append(data_string)
+      data_string = ""
+
+# Create the dictionary.
+reviews_dict = {'Reviewer Name': names, 'Reviews': reviews}
+# Print the lengths of each list.  
+print(len(names), len(reviews))   
+
+# Create a new dataframe.
+df = pd.DataFrame.from_dict(reviews_dict, orient='index')
+df.head()
+
+# Delete all the columns that have missing values.
+df.dropna(axis=1, inplace=True)
+df.head()
+
+# Transpose the dataframe.
+prod_reviews = df.T
+print(prod_reviews.head(10))
+
+# Remove special characters from review text.
+prod_reviews['Reviews'] = prod_reviews['Reviews'].astype(str)
+
+prod_reviews.head(5)
+
+# Convert dataframe to CSV file.
+prod_reviews.to_csv('Rev_Alt_3.csv', index=False, header=True)
+
+#Appendix B
+
+words = []
+# list of stopwords to exclude stopwords = [ "able","about","above","abroad"]
+ 
+with open("/content/drive/My Drive/data/Rev_Alt_2.csv", "r") as f:
+    for line in f:
+        for word in line.split():
+            word = word.rstrip(".,?!:;")  # remove "." at the end of the word
+            if word.lower() not in stopwords:  # check if word is a stopword
+                words.append(word)  # add word to list if it's not a stopword
+
+from collections import Counter
+counts = Counter(words)
+top5 = counts.most_common(35)
+print(top5)
+
+
+#Appendix C
+
+import csv
+import nltk
+
+nltk.download('vader_lexicon')
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+# Create a list of keywords to search for rating 
+words_to_search = ["price", "chair", "support", "easy", "seat", "comfortable", "uncomfortable", "small", "sitting", "broke", "mesh", "lumbar", "plastic", "service", "headrest", "wheels", "rest", "price", "arms", "recommend", "quality", "assembly", "cushion", "back", "screws"]
+
+# Create a SentimentIntensityAnalyzer object
+sia = SentimentIntensityAnalyzer()
+
+# Initialize a counter to 1
+counter = 1
+
+# Import the csv module
+import csv
+
+# Mount your Google Drive
+from google.colab import drive
+drive.mount('/content/drive')
+
+# Open the file in read mode
+with open("/content/drive/My Drive/data/Rev_Alt_4.csv", "r") as f:
+  # Create a csv reader object
+  reader = csv.reader(f)
+
+  # Iterate over the words in the list
+  for word in words_to_search:
+    # Initialize a total sentiment score, a review count, and an iteration count to 0
+    total_score = 0
+    review_count = 0
+    iteration_count = 0
+
+    # Reset the file pointer to the beginning of the file
+    f.seek(0)
+
+    # Iterate over the rows in the file
+    for row in reader:
+      # Extract the review text
+      review = row[1]
+
+      # Convert the review text to lowercase and remove any punctuation at the end of words
+      review = review.lower()
+      review = " ".join([word.rstrip(".,") for word in review.split()])
+
+      # Split the review text into a list of words
+      words = review.split()
+
+      # Check if the word appears in the review (ignoring case)
+      if word.lower() in [w.lower() for w in words]:
+        # Calculate the sentiment scores for the review
+        scores = sia.polarity_scores(review)
+
+        # Add the overall sentiment score for the review to the total score
+        total_score += scores["compound"]
+
+        # Increment the review count and the iteration count by 1
+        review_count += 1
+        iteration_count += len([w for w in words if w.lower() == word.lower()])
+
+    # Calculate the average sentiment score by dividing the total score by the iteration count, or set it to 0 if the iteration count is 0
+    if iteration_count > 0:
+      average_score = total_score / iteration_count
+    else:
+      average_score = 0
+
+    # Print the word, number of rows with the word, total number of iterations, and average sentiment score
+    print(f'{counter}. {word}: {review_count} ({iteration_count}): {average_score:.4f}')
+
+    # Increment the counter by 1
+    counter += 1
