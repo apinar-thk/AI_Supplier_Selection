@@ -1,4 +1,7 @@
-# Appendix A of the Article
+# It includes Appendix A1-A2 and A3 of the Article
+
+#  Appendix A1
+
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -54,7 +57,7 @@ prod_reviews.head(5)
 # Convert dataframe to CSV file.
 prod_reviews.to_csv('Rev_Alt_3.csv', index=False, header=True)
 
-#Appendix B
+#Appendix A2
 
 words = []
 # list of stopwords to exclude stopwords = [ "able","about","above","abroad"]
@@ -72,7 +75,7 @@ top5 = counts.most_common(35)
 print(top5)
 
 
-#Appendix C
+#Appendix A3
 
 import csv
 import nltk
